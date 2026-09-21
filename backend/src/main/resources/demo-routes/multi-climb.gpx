@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="GradeFinder Demo"
+     xmlns="http://www.topografix.com/GPX/1/1">
+  <trk>
+    <name>Multi-Climb Technical</name>
+    <trkseg>
+      <!--
+        Multi-Climb Technical — the key fixture for the bounded-descent-tolerance algorithm.
+
+        WHAT PLAIN KADANE'S WOULD DO (wrong):
+          Start at trkpt[0] (ele=500), end at trkpt[44] (ele=640).
+          Net gain = 640 − 500 = 140m, spanning the entire route including the valley.
+          The flat valley contributes delta ≈ 0 each step, so the running sum never
+          falls below 0, and plain Kadane's never restarts. Result: one giant segment
+          bridging both climbs and the valley between them.
+
+        WHAT THE BOUNDED-DESCENT FIX DOES (correct):
+          After climb 1 peaks at ~600m, the descent begins: 600→580→560→540→520→510.
+          That is 90m of descent — far exceeding the 3m descentTolerance.
+          The algorithm restarts from the valley floor.
+          Climb 1 is finalised: net gain ≈ 100m (500→600).
+          Climb 2 is then detected independently: net gain ≈ 130m (510→640).
+          Reported best = Climb 2 at 130m.
+
+        STRUCTURE:
+          Phase A: Approach/flat at 500m (points 0–4)        ~0–450m along route
+          Phase B: Climb 1, ~100m gain, 500→600m (pts 5–14)  ~450–1350m
+          Phase C: Long descent, 600→510m (pts 15–21)        ~1350–2000m
+          Phase D: Long FLAT VALLEY at ~510m (pts 22–38)     ~2000–3500m  ← key
+          Phase E: Climb 2, ~130m gain, 510→640m (pts 39–50) ~3500–4600m
+          Phase F: Final descent from 640→580m (pts 51–56)   ~4600–5100m
+
+        Coordinate spacing ≈ 100m per point (lat step 0.0009°), giving ~450m/step
+        for diagonal moves at lat 44° (cos 44° ≈ 0.719):
+          lat step 0.001° ≈ 111m, lon step 0.001° ≈ 80m
+        We use lat steps of ~0.0009° ≈ 100m along track for a clean layout.
+      -->
+
+      <!-- ── Phase A: Flat approach at 500m ── -->
+      <trkpt lat="44.0000" lon="7.5000"><ele>500</ele></trkpt>
+      <trkpt lat="44.0010" lon="7.5010"><ele>501</ele></trkpt>
+      <trkpt lat="44.0020" lon="7.5020"><ele>500</ele></trkpt>
+      <trkpt lat="44.0030" lon="7.5030"><ele>502</ele></trkpt>
+      <trkpt lat="44.0040" lon="7.5040"><ele>500</ele></trkpt>
+
+      <!-- ── Phase B: Climb 1 — ~100m gain (500→600m) ── -->
+      <!-- Steady ascent with one small 2m dip (within tolerance — should NOT break) -->
+      <trkpt lat="44.0050" lon="7.5050"><ele>510</ele></trkpt>
+      <trkpt lat="44.0060" lon="7.5060"><ele>522</ele></trkpt>
+      <trkpt lat="44.0070" lon="7.5070"><ele>536</ele></trkpt>
+      <trkpt lat="44.0080" lon="7.5080"><ele>550</ele></trkpt>
+      <trkpt lat="44.0090" lon="7.5090"><ele>548</ele></trkpt> <!-- 2m dip: within 3m tolerance -->
+      <trkpt lat="44.0100" lon="7.5100"><ele>562</ele></trkpt>
+      <trkpt lat="44.0110" lon="7.5110"><ele>574</ele></trkpt>
+      <trkpt lat="44.0120" lon="7.5120"><ele>584</ele></trkpt>
+      <trkpt lat="44.0130" lon="7.5130"><ele>592</ele></trkpt>
+      <trkpt lat="44.0140" lon="7.5140"><ele>600</ele></trkpt> <!-- peak of climb 1 -->
+
+      <!-- ── Phase C: Long descent — 90m drop (600→510m) — FAR exceeds 3m tolerance ── -->
+      <!-- This MUST trigger a restart in the algorithm -->
+      <trkpt lat="44.0150" lon="7.5150"><ele>590</ele></trkpt>
+      <trkpt lat="44.0160" lon="7.5160"><ele>575</ele></trkpt>
+      <trkpt lat="44.0170" lon="7.5170"><ele>560</ele></trkpt>
+      <trkpt lat="44.0180" lon="7.5180"><ele>545</ele></trkpt>
+      <trkpt lat="44.0190" lon="7.5190"><ele>530</ele></trkpt>
+      <trkpt lat="44.0200" lon="7.5200"><ele>518</ele></trkpt>
+      <trkpt lat="44.0210" lon="7.5210"><ele>510</ele></trkpt> <!-- valley floor -->
+
+      <!-- ── Phase D: LONG FLAT VALLEY — 17 points at ~510m (~1500m horizontal) ── -->
+      <!--
+        This is the critical section. Plain Kadane's sees delta ≈ 0 here
+        and keeps the running sum positive (since 0 never decreases it).
+        The bounded-descent fix has already restarted at the bottom of Phase C,
+        so these flat points just reset the new candidate's currentGain to near-zero.
+      -->
+      <trkpt lat="44.0220" lon="7.5220"><ele>511</ele></trkpt>
+      <trkpt lat="44.0230" lon="7.5230"><ele>510</ele></trkpt>
+      <trkpt lat="44.0240" lon="7.5240"><ele>509</ele></trkpt>
+      <trkpt lat="44.0250" lon="7.5250"><ele>510</ele></trkpt>
+      <trkpt lat="44.0260" lon="7.5260"><ele>511</ele></trkpt>
+      <trkpt lat="44.0270" lon="7.5270"><ele>510</ele></trkpt>
+      <trkpt lat="44.0280" lon="7.5280"><ele>510</ele></trkpt>
+      <trkpt lat="44.0290" lon="7.5290"><ele>509</ele></trkpt>
+      <trkpt lat="44.0300" lon="7.5300"><ele>510</ele></trkpt>
+      <trkpt lat="44.0310" lon="7.5310"><ele>511</ele></trkpt>
+      <trkpt lat="44.0320" lon="7.5320"><ele>510</ele></trkpt>
+      <trkpt lat="44.0330" lon="7.5330"><ele>510</ele></trkpt>
+      <trkpt lat="44.0340" lon="7.5340"><ele>509</ele></trkpt>
+      <trkpt lat="44.0350" lon="7.5350"><ele>510</ele></trkpt>
+      <trkpt lat="44.0360" lon="7.5360"><ele>511</ele></trkpt>
+      <trkpt lat="44.0370" lon="7.5370"><ele>510</ele></trkpt>
+      <trkpt lat="44.0380" lon="7.5380"><ele>510</ele></trkpt>
+
+      <!-- ── Phase E: Climb 2 — ~130m gain (510→640m) — bigger than climb 1 ── -->
+      <!-- This is the climb the algorithm should identify as the maximum -->
+      <trkpt lat="44.0390" lon="7.5390"><ele>520</ele></trkpt>
+      <trkpt lat="44.0400" lon="7.5400"><ele>533</ele></trkpt>
+      <trkpt lat="44.0410" lon="7.5410"><ele>548</ele></trkpt>
+      <trkpt lat="44.0420" lon="7.5420"><ele>562</ele></trkpt>
+      <trkpt lat="44.0430" lon="7.5430"><ele>575</ele></trkpt>
+      <trkpt lat="44.0440" lon="7.5440"><ele>588</ele></trkpt>
+      <trkpt lat="44.0450" lon="7.5450"><ele>600</ele></trkpt>
+      <trkpt lat="44.0460" lon="7.5460"><ele>612</ele></trkpt>
+      <trkpt lat="44.0470" lon="7.5470"><ele>622</ele></trkpt>
+      <trkpt lat="44.0480" lon="7.5480"><ele>630</ele></trkpt>
+      <trkpt lat="44.0490" lon="7.5490"><ele>637</ele></trkpt>
+      <trkpt lat="44.0500" lon="7.5500"><ele>640</ele></trkpt> <!-- peak of climb 2 -->
+
+      <!-- ── Phase F: Final descent (640→580m) ── -->
+      <trkpt lat="44.0510" lon="7.5510"><ele>628</ele></trkpt>
+      <trkpt lat="44.0520" lon="7.5520"><ele>615</ele></trkpt>
+      <trkpt lat="44.0530" lon="7.5530"><ele>600</ele></trkpt>
+      <trkpt lat="44.0540" lon="7.5540"><ele>592</ele></trkpt>
+      <trkpt lat="44.0550" lon="7.5550"><ele>585</ele></trkpt>
+      <trkpt lat="44.0560" lon="7.5560"><ele>580</ele></trkpt>
+    </trkseg>
+  </trk>
+</gpx>

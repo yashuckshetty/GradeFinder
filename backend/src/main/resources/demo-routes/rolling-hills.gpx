@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="GradeFinder Demo"
+     xmlns="http://www.topografix.com/GPX/1/1">
+  <trk>
+    <name>Rolling Hills</name>
+    <trkseg>
+      <!-- Start: flat approach -->
+      <trkpt lat="47.3769" lon="8.5417"><ele>400</ele></trkpt>
+      <trkpt lat="47.3779" lon="8.5427"><ele>402</ele></trkpt>
+      <trkpt lat="47.3789" lon="8.5437"><ele>405</ele></trkpt>
+      <trkpt lat="47.3799" lon="8.5447"><ele>410</ele></trkpt>
+      <!-- Hill 1: climb ~50m -->
+      <trkpt lat="47.3809" lon="8.5457"><ele>420</ele></trkpt>
+      <trkpt lat="47.3819" lon="8.5467"><ele>432</ele></trkpt>
+      <trkpt lat="47.3829" lon="8.5477"><ele>445</ele></trkpt>
+      <trkpt lat="47.3839" lon="8.5487"><ele>455</ele></trkpt>
+      <trkpt lat="47.3849" lon="8.5497"><ele>460</ele></trkpt>
+      <!-- Hill 1: descent -->
+      <trkpt lat="47.3859" lon="8.5507"><ele>452</ele></trkpt>
+      <trkpt lat="47.3869" lon="8.5517"><ele>440</ele></trkpt>
+      <trkpt lat="47.3879" lon="8.5527"><ele>425</ele></trkpt>
+      <trkpt lat="47.3889" lon="8.5537"><ele>412</ele></trkpt>
+      <!-- Valley -->
+      <trkpt lat="47.3899" lon="8.5547"><ele>408</ele></trkpt>
+      <trkpt lat="47.3909" lon="8.5557"><ele>406</ele></trkpt>
+      <trkpt lat="47.3919" lon="8.5567"><ele>405</ele></trkpt>
+      <!-- Hill 2: the biggest climb ~80m (should be detected as max) -->
+      <trkpt lat="47.3929" lon="8.5577"><ele>410</ele></trkpt>
+      <trkpt lat="47.3939" lon="8.5587"><ele>422</ele></trkpt>
+      <trkpt lat="47.3949" lon="8.5597"><ele>438</ele></trkpt>
+      <trkpt lat="47.3959" lon="8.5607"><ele>450</ele></trkpt>
+      <trkpt lat="47.3969" lon="8.5617"><ele>462</ele></trkpt>
+      <trkpt lat="47.3979" lon="8.5627"><ele>473</ele></trkpt>
+      <trkpt lat="47.3989" lon="8.5637"><ele>480</ele></trkpt>
+      <trkpt lat="47.3999" lon="8.5647"><ele>485</ele></trkpt>
+      <!-- Hill 2: descent -->
+      <trkpt lat="47.4009" lon="8.5657"><ele>478</ele></trkpt>
+      <trkpt lat="47.4019" lon="8.5667"><ele>465</ele></trkpt>
+      <trkpt lat="47.4029" lon="8.5677"><ele>450</ele></trkpt>
+      <trkpt lat="47.4039" lon="8.5687"><ele>438</ele></trkpt>
+      <!-- Hill 3: small climb ~30m -->
+      <trkpt lat="47.4049" lon="8.5697"><ele>442</ele></trkpt>
+      <trkpt lat="47.4059" lon="8.5707"><ele>450</ele></trkpt>
+      <trkpt lat="47.4069" lon="8.5717"><ele>460</ele></trkpt>
+      <trkpt lat="47.4079" lon="8.5727"><ele>468</ele></trkpt>
+      <!-- Finish: descent -->
+      <trkpt lat="47.4089" lon="8.5737"><ele>455</ele></trkpt>
+      <trkpt lat="47.4099" lon="8.5747"><ele>440</ele></trkpt>
+      <trkpt lat="47.4109" lon="8.5757"><ele>425</ele></trkpt>
+      <trkpt lat="47.4119" lon="8.5767"><ele>410</ele></trkpt>
+      <trkpt lat="47.4129" lon="8.5777"><ele>400</ele></trkpt>
+    </trkseg>
+  </trk>
+</gpx>

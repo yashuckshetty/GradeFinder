@@ -1,0 +1,57 @@
+# ============================================================
+# GradeFinder — Application Configuration
+# ============================================================
+# All numeric thresholds from the algorithm specification live here.
+# Every value is injectable per-request as optional override.
+# ============================================================
+
+server:
+  port: 8080
+
+spring:
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 12MB
+
+gradefinder:
+  analysis:
+    # Bounded descent tolerance: cumulative descent (meters) allowed within a
+    # single "climb" before the algorithm considers the climb genuinely broken.
+    # Default 3.0m absorbs brief rollers common in real rolling terrain.
+    descent-tolerance: 3.0
+
+    # Minimum net elevation gain (meters) for a detected climb to be reported
+    # as "significant." Climbs below this are noise, not features.
+    min-significant-gain: 20.0
+
+    # Minimum average grade (%) for a detected climb to be reported as significant.
+    # A long but nearly-flat uphill is not a "climb" in any meaningful user sense.
+    min-significant-grade: 1.5
+
+    # Elevation smoothing window (number of points, centered moving average).
+    # Must be odd; if even, implementation adds 1.
+    smoothing-window: 5
+
+    # Render-point threshold: routes exceeding this point count get a downsampled
+    # renderPoints array for chart/3D rendering, while analytical results always
+    # use the full dataset.
+    render-point-threshold: 2000
+
+    # Ascent tolerance for recovery (loss) detection, symmetric to descent-tolerance.
+    ascent-tolerance: 3.0
+
+  validation:
+    # Hard cap on points per route — reject, not silently downsample.
+    max-point-count: 50000
+
+    # Maximum file size enforced at application level (server-level cap above is
+    # the first line of defense).
+    max-file-size-bytes: 10485760
+
+    # Elevation sanity band — clamp, don't reject.
+    min-elevation: -500.0
+    max-elevation: 9000.0
+
+    # Minimum distance between consecutive points before they're considered duplicates.
+    min-step-distance: 0.5

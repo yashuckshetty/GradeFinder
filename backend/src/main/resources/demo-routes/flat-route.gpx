@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="GradeFinder Demo"
+     xmlns="http://www.topografix.com/GPX/1/1">
+  <trk>
+    <name>Flat Route</name>
+    <trkseg>
+      <trkpt lat="52.5200" lon="13.4050"><ele>35</ele></trkpt>
+      <trkpt lat="52.5210" lon="13.4060"><ele>35</ele></trkpt>
+      <trkpt lat="52.5220" lon="13.4070"><ele>36</ele></trkpt>
+      <trkpt lat="52.5230" lon="13.4080"><ele>35</ele></trkpt>
+      <trkpt lat="52.5240" lon="13.4090"><ele>36</ele></trkpt>
+      <trkpt lat="52.5250" lon="13.4100"><ele>35</ele></trkpt>
+      <trkpt lat="52.5260" lon="13.4110"><ele>36</ele></trkpt>
+      <trkpt lat="52.5270" lon="13.4120"><ele>36</ele></trkpt>
+      <trkpt lat="52.5280" lon="13.4130"><ele>35</ele></trkpt>
+      <trkpt lat="52.5290" lon="13.4140"><ele>35</ele></trkpt>
+      <trkpt lat="52.5300" lon="13.4150"><ele>36</ele></trkpt>
+      <trkpt lat="52.5310" lon="13.4160"><ele>36</ele></trkpt>
+      <trkpt lat="52.5320" lon="13.4170"><ele>35</ele></trkpt>
+      <trkpt lat="52.5330" lon="13.4180"><ele>35</ele></trkpt>
+      <trkpt lat="52.5340" lon="13.4190"><ele>36</ele></trkpt>
+      <trkpt lat="52.5350" lon="13.4200"><ele>35</ele></trkpt>
+      <trkpt lat="52.5360" lon="13.4210"><ele>35</ele></trkpt>
+      <trkpt lat="52.5370" lon="13.4220"><ele>36</ele></trkpt>
+      <trkpt lat="52.5380" lon="13.4230"><ele>35</ele></trkpt>
+      <trkpt lat="52.5390" lon="13.4240"><ele>35</ele></trkpt>
+    </trkseg>
+  </trk>
+</gpx>

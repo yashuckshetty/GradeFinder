@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="GradeFinder Demo"
+     xmlns="http://www.topografix.com/GPX/1/1">
+  <trk>
+    <name>Mountain Climb</name>
+    <trkseg>
+      <!-- Valley start -->
+      <trkpt lat="46.0207" lon="7.7491"><ele>620</ele></trkpt>
+      <trkpt lat="46.0217" lon="7.7501"><ele>628</ele></trkpt>
+      <trkpt lat="46.0227" lon="7.7511"><ele>640</ele></trkpt>
+      <trkpt lat="46.0237" lon="7.7521"><ele>658</ele></trkpt>
+      <trkpt lat="46.0247" lon="7.7531"><ele>680</ele></trkpt>
+      <!-- Steady steep climb -->
+      <trkpt lat="46.0257" lon="7.7541"><ele>710</ele></trkpt>
+      <trkpt lat="46.0267" lon="7.7551"><ele>745</ele></trkpt>
+      <trkpt lat="46.0277" lon="7.7561"><ele>782</ele></trkpt>
+      <trkpt lat="46.0287" lon="7.7571"><ele>820</ele></trkpt>
+      <trkpt lat="46.0297" lon="7.7581"><ele>855</ele></trkpt>
+      <!-- Brief roller (2m dip — within tolerance, should NOT break the climb) -->
+      <trkpt lat="46.0307" lon="7.7591"><ele>853</ele></trkpt>
+      <trkpt lat="46.0317" lon="7.7601"><ele>890</ele></trkpt>
+      <trkpt lat="46.0327" lon="7.7611"><ele>930</ele></trkpt>
+      <trkpt lat="46.0337" lon="7.7621"><ele>968</ele></trkpt>
+      <trkpt lat="46.0347" lon="7.7631"><ele>1005</ele></trkpt>
+      <trkpt lat="46.0357" lon="7.7641"><ele>1040</ele></trkpt>
+      <trkpt lat="46.0367" lon="7.7651"><ele>1075</ele></trkpt>
+      <trkpt lat="46.0377" lon="7.7661"><ele>1108</ele></trkpt>
+      <trkpt lat="46.0387" lon="7.7671"><ele>1140</ele></trkpt>
+      <!-- Summit area -->
+      <trkpt lat="46.0397" lon="7.7681"><ele>1165</ele></trkpt>
+      <trkpt lat="46.0407" lon="7.7691"><ele>1180</ele></trkpt>
+      <trkpt lat="46.0417" lon="7.7701"><ele>1188</ele></trkpt>
+      <!-- Descent -->
+      <trkpt lat="46.0427" lon="7.7711"><ele>1170</ele></trkpt>
+      <trkpt lat="46.0437" lon="7.7721"><ele>1145</ele></trkpt>
+      <trkpt lat="46.0447" lon="7.7731"><ele>1115</ele></trkpt>
+      <trkpt lat="46.0457" lon="7.7741"><ele>1080</ele></trkpt>
+      <trkpt lat="46.0467" lon="7.7751"><ele>1040</ele></trkpt>
+      <trkpt lat="46.0477" lon="7.7761"><ele>1000</ele></trkpt>
+      <trkpt lat="46.0487" lon="7.7771"><ele>960</ele></trkpt>
+      <trkpt lat="46.0497" lon="7.7781"><ele>920</ele></trkpt>
+    </trkseg>
+  </trk>
+</gpx>

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="GradeFinder Demo"
+     xmlns="http://www.topografix.com/GPX/1/1">
+  <trk>
+    <name>Long Gradual Ascent</name>
+    <trkseg>
+      <trkpt lat="45.0500" lon="6.1200"><ele>300</ele></trkpt>
+      <trkpt lat="45.0520" lon="6.1220"><ele>304</ele></trkpt>
+      <trkpt lat="45.0540" lon="6.1240"><ele>309</ele></trkpt>
+      <trkpt lat="45.0560" lon="6.1260"><ele>314</ele></trkpt>
+      <trkpt lat="45.0580" lon="6.1280"><ele>320</ele></trkpt>
+      <trkpt lat="45.0600" lon="6.1300"><ele>326</ele></trkpt>
+      <trkpt lat="45.0620" lon="6.1320"><ele>332</ele></trkpt>
+      <trkpt lat="45.0640" lon="6.1340"><ele>339</ele></trkpt>
+      <trkpt lat="45.0660" lon="6.1360"><ele>345</ele></trkpt>
+      <trkpt lat="45.0680" lon="6.1380"><ele>352</ele></trkpt>
+      <trkpt lat="45.0700" lon="6.1400"><ele>359</ele></trkpt>
+      <trkpt lat="45.0720" lon="6.1420"><ele>366</ele></trkpt>
+      <trkpt lat="45.0740" lon="6.1440"><ele>373</ele></trkpt>
+      <trkpt lat="45.0760" lon="6.1460"><ele>381</ele></trkpt>
+      <trkpt lat="45.0780" lon="6.1480"><ele>388</ele></trkpt>
+      <trkpt lat="45.0800" lon="6.1500"><ele>396</ele></trkpt>
+      <trkpt lat="45.0820" lon="6.1520"><ele>404</ele></trkpt>
+      <trkpt lat="45.0840" lon="6.1540"><ele>412</ele></trkpt>
+      <trkpt lat="45.0860" lon="6.1560"><ele>420</ele></trkpt>
+      <trkpt lat="45.0880" lon="6.1580"><ele>429</ele></trkpt>
+      <trkpt lat="45.0900" lon="6.1600"><ele>437</ele></trkpt>
+      <trkpt lat="45.0920" lon="6.1620"><ele>446</ele></trkpt>
+      <trkpt lat="45.0940" lon="6.1640"><ele>455</ele></trkpt>
+      <trkpt lat="45.0960" lon="6.1660"><ele>464</ele></trkpt>
+      <trkpt lat="45.0980" lon="6.1680"><ele>473</ele></trkpt>
+      <trkpt lat="45.1000" lon="6.1700"><ele>482</ele></trkpt>
+      <trkpt lat="45.1020" lon="6.1720"><ele>491</ele></trkpt>
+      <trkpt lat="45.1040" lon="6.1740"><ele>500</ele></trkpt>
+      <trkpt lat="45.1060" lon="6.1760"><ele>510</ele></trkpt>
+      <trkpt lat="45.1080" lon="6.1780"><ele>519</ele></trkpt>
+      <!-- Gentle plateau and descent -->
+      <trkpt lat="45.1100" lon="6.1800"><ele>522</ele></trkpt>
+      <trkpt lat="45.1120" lon="6.1820"><ele>520</ele></trkpt>
+      <trkpt lat="45.1140" lon="6.1840"><ele>515</ele></trkpt>
+      <trkpt lat="45.1160" lon="6.1860"><ele>508</ele></trkpt>
+      <trkpt lat="45.1180" lon="6.1880"><ele>500</ele></trkpt>
+    </trkseg>
+  </trk>
+</gpx>
