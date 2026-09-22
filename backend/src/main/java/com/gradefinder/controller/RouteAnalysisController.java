@@ -95,23 +95,25 @@ public class RouteAnalysisController {
      */
     @GetMapping("/demo")
     public ResponseEntity<List<DemoRouteDto>> listDemos() {
-        List<DemoRouteDto> demos = List.of(
-            new DemoRouteDto("rolling-hills", "Rolling Hills",
-                "Gentle rolling terrain with multiple small climbs and descents — tests that the algorithm correctly identifies the largest sustained climb among several candidates.",
-                24.5),
-            new DemoRouteDto("mountain-climb", "Mountain Climb",
-                "A single long, steep mountain ascent — the classic use case. Tests straightforward climb detection.",
-                18.2),
-            new DemoRouteDto("long-gradual", "Long Gradual Ascent",
-                "A very long but gentle uphill — tests that a low-grade climb with significant total gain is correctly detected.",
-                35.0),
-            new DemoRouteDto("multi-climb", "Multi-Climb Technical",
-                "Two distinct climbs separated by a long flat valley — the key test case proving the descent-tolerance algorithm correctly splits them instead of bridging.",
-                42.0),
-            new DemoRouteDto("flat-route", "Flat Route",
-                "A nearly flat route with negligible elevation change — exercises the 'no significant climb' path honestly.",
-                15.0)
+        List<String> ids = List.of("rolling-hills", "mountain-climb", "long-gradual", "multi-climb", "flat-route");
+        Map<String, String> descMap = Map.of(
+            "rolling-hills", "Gentle rolling terrain with multiple small climbs and descents — tests that the algorithm correctly identifies the largest sustained climb among several candidates.",
+            "mountain-climb", "A single long, steep mountain ascent — the classic use case. Tests straightforward climb detection.",
+            "long-gradual", "A very long but gentle uphill — tests that a low-grade climb with significant total gain is correctly detected.",
+            "multi-climb", "Two distinct climbs separated by a long flat valley — the key test case proving the descent-tolerance algorithm correctly splits them instead of bridging.",
+            "flat-route", "A nearly flat route with negligible elevation change — exercises the 'no significant climb' path honestly."
         );
+
+        List<DemoRouteDto> demos = new java.util.ArrayList<>();
+        for (String id : ids) {
+            RouteAnalysisResponseDto analysis = analysisService.analyzeDemo(id, null, null, null);
+            demos.add(new DemoRouteDto(
+                id,
+                analysis.getRouteName(),
+                descMap.get(id),
+                analysis.getSummary().getDistanceKm()
+            ));
+        }
         return ResponseEntity.ok(demos);
     }
 

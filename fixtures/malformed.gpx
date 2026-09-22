@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="GradeFinderTest">
+  <trk>
+    <name>Malformed GPX File</name>
+    <trkseg>
+      <trkpt lat="37.7749" lon="-122.4194">
+        <ele>100.0</ele>
+      <!-- Unclosed tag and broken XML

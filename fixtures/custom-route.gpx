@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="GradeFinder">
+  <trk>
+    <name>Coastal Headland Ascent</name>
+    <trkseg>
+      <trkpt lat="37.774900" lon="-122.419400"><ele>50.00</ele></trkpt>
+      <trkpt lat="37.775900" lon="-122.418900"><ele>55.50</ele></trkpt>
+      <trkpt lat="37.776900" lon="-122.418400"><ele>61.00</ele></trkpt>
+      <trkpt lat="37.777900" lon="-122.417900"><ele>66.50</ele></trkpt>
+      <trkpt lat="37.778900" lon="-122.417400"><ele>72.00</ele></trkpt>
+      <trkpt lat="37.779900" lon="-122.416900"><ele>77.50</ele></trkpt>
+      <trkpt lat="37.780900" lon="-122.416400"><ele>83.00</ele></trkpt>
+      <trkpt lat="37.781900" lon="-122.415900"><ele>88.50</ele></trkpt>
+      <trkpt lat="37.782900" lon="-122.415400"><ele>94.00</ele></trkpt>
+      <trkpt lat="37.783900" lon="-122.414900"><ele>99.50</ele></trkpt>
+      <trkpt lat="37.784900" lon="-122.414400"><ele>105.00</ele></trkpt>
+      <trkpt lat="37.785900" lon="-122.413900"><ele>110.50</ele></trkpt>
+      <trkpt lat="37.786900" lon="-122.413400"><ele>116.00</ele></trkpt>
+      <trkpt lat="37.787900" lon="-122.412900"><ele>121.50</ele></trkpt>
+      <trkpt lat="37.788900" lon="-122.412400"><ele>127.00</ele></trkpt>
+      <trkpt lat="37.789900" lon="-122.411900"><ele>132.50</ele></trkpt>
+      <trkpt lat="37.790900" lon="-122.411400"><ele>138.00</ele></trkpt>
+      <trkpt lat="37.791900" lon="-122.410900"><ele>143.50</ele></trkpt>
+      <trkpt lat="37.792900" lon="-122.410400"><ele>149.00</ele></trkpt>
+      <trkpt lat="37.793900" lon="-122.409900"><ele>154.50</ele></trkpt>
+      <trkpt lat="37.794900" lon="-122.409400"><ele>160.00</ele></trkpt>
+      <trkpt lat="37.795900" lon="-122.408900"><ele>165.50</ele></trkpt>
+      <trkpt lat="37.796900" lon="-122.408400"><ele>171.00</ele></trkpt>
+      <trkpt lat="37.797900" lon="-122.407900"><ele>176.50</ele></trkpt>
+      <trkpt lat="37.798900" lon="-122.407400"><ele>182.00</ele></trkpt>
+      <trkpt lat="37.799900" lon="-122.406900"><ele>187.50</ele></trkpt>
+      <trkpt lat="37.800900" lon="-122.406400"><ele>193.00</ele></trkpt>
+      <trkpt lat="37.801900" lon="-122.405900"><ele>198.50</ele></trkpt>
+      <trkpt lat="37.802900" lon="-122.405400"><ele>204.00</ele></trkpt>
+      <trkpt lat="37.803900" lon="-122.404900"><ele>209.50</ele></trkpt>
+    </trkseg>
+  </trk>
+</gpx>

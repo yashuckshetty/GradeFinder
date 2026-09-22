@@ -32,6 +32,13 @@ public class RouteSimulationService {
         // Retrieve cached points
         List<RoutePoint> original = analysisService.getCachedPoints(routeId);
         if (original == null) {
+            try {
+                analysisService.getOrAnalyzeRoute(routeId);
+                original = analysisService.getCachedPoints(routeId);
+            } catch (Exception ignored) {
+            }
+        }
+        if (original == null) {
             throw new IllegalArgumentException(
                     "Route not found in cache. Please re-analyze the route first.");
         }
@@ -54,8 +61,43 @@ public class RouteSimulationService {
         for (int i = 0; i < excludeStart; i++) {
             spliced.add(copyPoint(original.get(i)));
         }
+
+        // For internal splices, close the geographic gap so the bypassed segment's
+        // distance is excluded from the new route's cumulative distance and 3D terrain
+        double offsetLat = 0.0;
+        double offsetLon = 0.0;
+
+        if (excludeStart > 0 && excludeEnd < original.size() - 1) {
+            RoutePoint pPrev = original.get(excludeStart - 1);
+            RoutePoint pCutStart = original.get(excludeStart);
+            RoutePoint pCutEndNext = original.get(excludeEnd + 1);
+
+            double stepLat = pCutStart.getLat() - pPrev.getLat();
+            double stepLon = pCutStart.getLon() - pPrev.getLon();
+
+            if (stepLat == 0.0 && stepLon == 0.0) {
+                RoutePoint pCutEnd = original.get(excludeEnd);
+                stepLat = pCutEndNext.getLat() - pCutEnd.getLat();
+                stepLon = pCutEndNext.getLon() - pCutEnd.getLon();
+            }
+            if (stepLat == 0.0 && stepLon == 0.0 && original.size() > 1) {
+                stepLat = (original.get(original.size() - 1).getLat() - original.get(0).getLat()) / (original.size() - 1);
+                stepLon = (original.get(original.size() - 1).getLon() - original.get(0).getLon()) / (original.size() - 1);
+            }
+
+            offsetLat = pCutEndNext.getLat() - (pPrev.getLat() + stepLat);
+            offsetLon = pCutEndNext.getLon() - (pPrev.getLon() + stepLon);
+        }
+
         for (int i = excludeEnd + 1; i < original.size(); i++) {
-            spliced.add(copyPoint(original.get(i)));
+            RoutePoint p = original.get(i);
+            RoutePoint copy = new RoutePoint(
+                    p.getLat() - offsetLat,
+                    p.getLon() - offsetLon,
+                    p.getElevation(),
+                    p.getTimestamp()
+            );
+            spliced.add(copy);
         }
 
         // Validate spliced result has enough points

@@ -243,6 +243,21 @@ public class RouteAnalysisService {
         return routeCache.get(routeId);
     }
 
+    /**
+     * Get or analyze route: checks in-memory cache (for uploaded files) first,
+     * otherwise falls back to demo route.
+     */
+    public RouteAnalysisResponseDto getOrAnalyzeRoute(String routeId) {
+        if (getClass().getResource("/demo-routes/" + routeId + ".gpx") != null) {
+            return analyzeDemo(routeId, null, null, null);
+        }
+        List<RoutePoint> cached = routeCache.get(routeId);
+        if (cached != null) {
+            return analyzePoints(new ArrayList<>(cached), routeId, "Custom Upload (" + routeId + ")", new ArrayList<>(), null, null, null);
+        }
+        return analyzeDemo(routeId, null, null, null);
+    }
+
     // --- Private helpers ---
 
     /**

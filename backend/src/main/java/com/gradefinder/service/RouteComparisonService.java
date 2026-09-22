@@ -18,8 +18,8 @@ public class RouteComparisonService {
     }
 
     public ComparisonResponseDto compare(String routeAId, String routeBId) {
-        RouteAnalysisResponseDto a = analysisService.analyzeDemo(routeAId, null, null, null);
-        RouteAnalysisResponseDto b = analysisService.analyzeDemo(routeBId, null, null, null);
+        RouteAnalysisResponseDto a = analysisService.getOrAnalyzeRoute(routeAId);
+        RouteAnalysisResponseDto b = analysisService.getOrAnalyzeRoute(routeBId);
 
         ComparisonResponseDto response = new ComparisonResponseDto();
         response.setRouteA(a);

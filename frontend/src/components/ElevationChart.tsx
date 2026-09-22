@@ -1,11 +1,11 @@
-import { useMemo } from 'react';
+import React, { useMemo } from 'react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, ReferenceArea, ReferenceLine,
 } from 'recharts';
 import type { PointDto, SegmentDto } from '../types';
 
-interface Props {
+interface ElevationChartProps {
   points: PointDto[];
   climbSegment: SegmentDto | null;
   recoverySegment: SegmentDto | null;
@@ -13,9 +13,15 @@ interface Props {
   onHover: (idx: number | null) => void;
 }
 
-export default function ElevationChart({ points, climbSegment, recoverySegment, hoverIndex, onHover }: Props) {
+export const ElevationChart: React.FC<ElevationChartProps> = ({
+  points,
+  climbSegment,
+  recoverySegment,
+  hoverIndex,
+  onHover,
+}) => {
   const chartData = useMemo(() =>
-    points.map(p => ({
+    points.map((p) => ({
       distance: p.distanceKm,
       elevation: p.smoothedElevationM,
       rawElevation: p.elevationM,
@@ -25,16 +31,18 @@ export default function ElevationChart({ points, climbSegment, recoverySegment, 
   );
 
   const minEle = useMemo(() => {
-    const min = Math.min(...chartData.map(d => d.elevation));
+    if (chartData.length === 0) return 0;
+    const min = Math.min(...chartData.map((d) => d.elevation));
     return Math.floor(min / 10) * 10 - 10;
   }, [chartData]);
 
   const maxEle = useMemo(() => {
-    const max = Math.max(...chartData.map(d => d.elevation));
+    if (chartData.length === 0) return 100;
+    const max = Math.max(...chartData.map((d) => d.elevation));
     return Math.ceil(max / 10) * 10 + 10;
   }, [chartData]);
 
-  // Find the chart x-values (distanceKm) for segment boundaries
+  // Segment boundaries
   const climbX = useMemo(() => {
     if (!climbSegment) return null;
     return {
@@ -51,19 +59,31 @@ export default function ElevationChart({ points, climbSegment, recoverySegment, 
     };
   }, [recoverySegment]);
 
-  // Find distance for hover crosshair
+  // Hover crosshair position
   const hoverDistance = useMemo(() => {
     if (hoverIndex == null) return null;
-    const pt = points.find(p => p.index === hoverIndex);
+    const pt = points.find((p) => p.index === hoverIndex);
     return pt?.distanceKm ?? null;
   }, [hoverIndex, points]);
 
   return (
-    <div className="chart-container">
-      <ResponsiveContainer width="100%" height="100%">
+    <div
+      className="chart-container"
+      style={{
+        position: 'relative',
+        width: '100%',
+        height: '380px',
+        borderRadius: 'var(--radius-md)',
+        overflow: 'hidden',
+        background: 'linear-gradient(180deg, rgba(74, 92, 62, 0.06) 0%, rgba(124, 136, 99, 0.06) 50%, rgba(185, 154, 92, 0.06) 100%)',
+        border: '1px solid var(--color-border)',
+        padding: '12px 16px 8px 8px',
+      }}
+    >
+      <ResponsiveContainer width="100%" height="100%" className="recharts-responsive-container">
         <AreaChart
           data={chartData}
-          margin={{ top: 8, right: 16, left: 8, bottom: 8 }}
+          margin={{ top: 16, right: 20, left: 8, bottom: 8 }}
           onMouseMove={(e: any) => {
             if (e?.activePayload?.[0]?.payload) {
               onHover(e.activePayload[0].payload.index);
@@ -72,47 +92,84 @@ export default function ElevationChart({ points, climbSegment, recoverySegment, 
           onMouseLeave={() => onHover(null)}
         >
           <defs>
-            <linearGradient id="elevGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#818cf8" stopOpacity={0.3} />
-              <stop offset="100%" stopColor="#818cf8" stopOpacity={0.02} />
+            {/* Neutral elevation fill gradient */}
+            <linearGradient id="terrainNeutralGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#6B6355" stopOpacity={0.25} />
+              <stop offset="100%" stopColor="#6B6355" stopOpacity={0.02} />
+            </linearGradient>
+            {/* Climb segment gradient */}
+            <linearGradient id="climbFillGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#E08A34" stopOpacity={0.35} />
+              <stop offset="100%" stopColor="#E08A34" stopOpacity={0.05} />
+            </linearGradient>
+            {/* Recovery segment gradient */}
+            <linearGradient id="recoveryFillGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#4E9C93" stopOpacity={0.3} />
+              <stop offset="100%" stopColor="#4E9C93" stopOpacity={0.04} />
             </linearGradient>
           </defs>
 
+          {/* Gridlines nearly invisible (30% opacity) */}
           <CartesianGrid
             strokeDasharray="3 3"
-            stroke="rgba(255,255,255,0.04)"
+            stroke="var(--color-border)"
+            strokeOpacity={0.3}
             vertical={false}
           />
 
           <XAxis
             dataKey="distance"
-            tick={{ fill: '#64748b', fontSize: 11 }}
-            axisLine={{ stroke: '#1e293b' }}
+            tick={{ fill: 'var(--color-text-muted)', fontSize: 11, fontFamily: 'var(--font-mono)' }}
+            axisLine={{ stroke: 'var(--color-border)' }}
             tickLine={false}
             tickFormatter={(v: number) => `${v.toFixed(1)}`}
-            label={{ value: 'Distance (km)', position: 'insideBottom', offset: -2, fill: '#64748b', fontSize: 11 }}
+            label={{
+              value: 'Distance (km)',
+              position: 'insideBottom',
+              offset: -4,
+              fill: 'var(--color-text-muted)',
+              fontSize: 11,
+              fontFamily: 'var(--font-body)',
+            }}
           />
 
           <YAxis
             domain={[minEle, maxEle]}
-            tick={{ fill: '#64748b', fontSize: 11 }}
-            axisLine={{ stroke: '#1e293b' }}
+            tick={{ fill: 'var(--color-text-muted)', fontSize: 11, fontFamily: 'var(--font-mono)' }}
+            axisLine={{ stroke: 'var(--color-border)' }}
             tickLine={false}
             tickFormatter={(v: number) => `${v}`}
-            label={{ value: 'Elevation (m)', angle: -90, position: 'insideLeft', offset: 10, fill: '#64748b', fontSize: 11 }}
+            label={{
+              value: 'Elevation (m)',
+              angle: -90,
+              position: 'insideLeft',
+              offset: 12,
+              fill: 'var(--color-text-muted)',
+              fontSize: 11,
+              fontFamily: 'var(--font-body)',
+            }}
           />
 
-          {/* Recovery segment highlight (behind climb) */}
+          {/* Recovery segment highlight */}
           {recoveryX && (
             <ReferenceArea
               x1={recoveryX.x1}
               x2={recoveryX.x2}
               y1={minEle}
               y2={maxEle}
-              fill="rgba(6, 182, 212, 0.12)"
-              stroke="rgba(6, 182, 212, 0.4)"
+              fill="rgba(78, 156, 147, 0.15)"
+              stroke="#4E9C93"
               strokeWidth={1}
               strokeDasharray="4 2"
+              label={{
+                value: '↘ BEST RECOVERY',
+                position: 'insideTopLeft',
+                fill: '#4E9C93',
+                fontSize: 10,
+                fontFamily: 'var(--font-body)',
+                fontWeight: 600,
+                letterSpacing: '0.04em',
+              }}
             />
           )}
 
@@ -123,52 +180,78 @@ export default function ElevationChart({ points, climbSegment, recoverySegment, 
               x2={climbX.x2}
               y1={minEle}
               y2={maxEle}
-              fill="rgba(245, 158, 11, 0.12)"
-              stroke="rgba(245, 158, 11, 0.4)"
+              fill="rgba(224, 138, 52, 0.15)"
+              stroke="#E08A34"
               strokeWidth={1}
               strokeDasharray="4 2"
+              label={{
+                value: '↗ HARDEST CLIMB',
+                position: 'insideTopLeft',
+                fill: '#E08A34',
+                fontSize: 10,
+                fontFamily: 'var(--font-body)',
+                fontWeight: 600,
+                letterSpacing: '0.04em',
+              }}
             />
           )}
 
-          {/* Hover crosshair */}
+          {/* Hover Crosshair (1px, --color-border-strong) */}
           {hoverDistance != null && (
             <ReferenceLine
               x={hoverDistance}
-              stroke="#ffffff"
-              strokeWidth={2}
-              strokeDasharray="4 4"
+              stroke="var(--color-border-strong)"
+              strokeWidth={1.5}
+              strokeDasharray="3 3"
             />
           )}
 
+          {/* Base elevation profile area */}
           <Area
             type="monotone"
             dataKey="elevation"
-            stroke="#818cf8"
+            stroke="rgba(242, 237, 227, 0.8)" /* --color-text-primary at 80% opacity */
             strokeWidth={2}
-            fill="url(#elevGradient)"
+            fill="url(#terrainNeutralGradient)"
             dot={false}
             activeDot={{
-              r: 4,
-              fill: '#818cf8',
-              stroke: '#0a0e17',
+              r: 5,
+              fill: 'var(--color-primary)',
+              stroke: 'var(--color-background)',
               strokeWidth: 2,
             }}
+            animationDuration={900}
+            animationEasing="ease-out"
           />
 
+          {/* Floating mono precision tooltip */}
           <Tooltip
             content={({ active, payload }) => {
               if (!active || !payload?.[0]) return null;
-              const d = payload[0].payload;
+              const data = payload[0].payload;
               return (
-                <div className="custom-tooltip">
-                  <div className="tooltip-title">Distance: {d.distance.toFixed(2)} km</div>
-                  <div className="tooltip-row">
-                    <span className="tooltip-label">Smoothed</span>
-                    <span className="tooltip-value">{d.elevation.toFixed(1)} m</span>
+                <div
+                  style={{
+                    background: 'var(--color-surface-raised)',
+                    border: '1px solid var(--color-border-strong)',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '8px 12px',
+                    boxShadow: 'var(--shadow-md)',
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: '0.75rem',
+                    color: 'var(--color-text-primary)',
+                  }}
+                >
+                  <div style={{ color: 'var(--color-text-muted)', marginBottom: '4px', textTransform: 'uppercase', fontSize: '0.6875rem' }}>
+                    Kilometer {Number(data.distance).toFixed(2)} km
                   </div>
-                  <div className="tooltip-row">
-                    <span className="tooltip-label">Raw</span>
-                    <span className="tooltip-value">{d.rawElevation.toFixed(1)} m</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px' }}>
+                    <span style={{ color: 'var(--color-text-secondary)' }}>Elevation:</span>
+                    <strong style={{ color: 'var(--color-text-primary)' }}>{Number(data.elevation).toFixed(1)} m</strong>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', marginTop: '2px' }}>
+                    <span style={{ color: 'var(--color-text-secondary)' }}>Index:</span>
+                    <span style={{ color: 'var(--color-text-muted)' }}>#{data.index}</span>
                   </div>
                 </div>
               );
@@ -178,4 +261,6 @@ export default function ElevationChart({ points, climbSegment, recoverySegment, 
       </ResponsiveContainer>
     </div>
   );
-}
+};
+
+export default ElevationChart;

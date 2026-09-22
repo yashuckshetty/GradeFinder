@@ -10,3 +10,8 @@ frontend/node_modules/
 .DS_Store
 Thumbs.db
 *.log
+
+# Test outputs
+frontend/test-results/
+frontend/playwright-report/
+fixtures/oversized.gpx

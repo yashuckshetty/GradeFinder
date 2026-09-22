@@ -1,22 +1,70 @@
-import { useRef, useEffect, useMemo, useCallback } from 'react';
+import React, { useRef, useEffect, useMemo, useCallback, useState } from 'react';
 import * as THREE from 'three';
 import type { PointDto, SegmentDto } from '../types';
 
-interface Props {
+interface TerrainViewProps {
   points: PointDto[];
   climbSegment: SegmentDto | null;
   recoverySegment: SegmentDto | null;
   hoverIndex: number | null;
   onHover: (idx: number | null) => void;
+  onFallbackTo2D?: () => void;
 }
 
-const CLIMB_COLOR = new THREE.Color(0xf59e0b);
-const RECOVERY_COLOR = new THREE.Color(0x06b6d4);
-const BASE_COLOR = new THREE.Color(0x818cf8);
-const HOVER_COLOR = new THREE.Color(0xffffff);
+// 5-stop topographic elevation gradient stops per Section 4 & 14
+const TERRAIN_STOPS = [
+  { stop: 0.0, color: new THREE.Color(0x4a5c3e) }, // deep moss
+  { stop: 0.25, color: new THREE.Color(0x7c8863) }, // sage moss
+  { stop: 0.50, color: new THREE.Color(0xb99a5c) }, // dry clay
+  { stop: 0.75, color: new THREE.Color(0xc9642f) }, // exposed rock / terracotta
+  { stop: 1.00, color: new THREE.Color(0xe8dcc8) }, // pale stone / glacier
+];
 
-export default function TerrainView({ points, climbSegment, recoverySegment, hoverIndex, onHover }: Props) {
+const CLIMB_EMISSIVE = new THREE.Color(0xe08a34);   // Warm ember rim glow
+const RECOVERY_EMISSIVE = new THREE.Color(0x4e9c93);// Glacier teal rim glow
+const HOVER_GLOW = new THREE.Color(0xc9642f);       // Shared glowing cursor point
+
+function getElevationColor(t: number): THREE.Color {
+  const clamped = Math.max(0, Math.min(1, t));
+  for (let i = 0; i < TERRAIN_STOPS.length - 1; i++) {
+    const s1 = TERRAIN_STOPS[i];
+    const s2 = TERRAIN_STOPS[i + 1];
+    if (clamped >= s1.stop && clamped <= s2.stop) {
+      const factor = (clamped - s1.stop) / (s2.stop - s1.stop);
+      return s1.color.clone().lerp(s2.color, factor);
+    }
+  }
+  return TERRAIN_STOPS[TERRAIN_STOPS.length - 1].color.clone();
+}
+
+function checkLowPowerOrMobile(): boolean {
+  try {
+    const canvas = document.createElement('canvas');
+    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+    if (!gl) return true;
+  } catch {
+    return true;
+  }
+  if (typeof window !== 'undefined') {
+    if (window.innerWidth < 768) return true;
+    if (navigator.hardwareConcurrency && navigator.hardwareConcurrency < 4) return true;
+  }
+  return false;
+}
+
+export const TerrainView: React.FC<TerrainViewProps> = ({
+  points,
+  climbSegment,
+  recoverySegment,
+  hoverIndex,
+  onHover,
+  onFallbackTo2D,
+}) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [exaggeration, setExaggeration] = useState<number>(3.0);
+  const [isLowPower] = useState<boolean>(() => checkLowPowerOrMobile());
+  const [forceFullRender, setForceFullRender] = useState<boolean>(false);
+
   const sceneRef = useRef<{
     renderer: THREE.WebGLRenderer;
     scene: THREE.Scene;
@@ -33,316 +81,262 @@ export default function TerrainView({ points, climbSegment, recoverySegment, hov
     animId: number;
   } | null>(null);
 
-  // Normalised data for the 3D mesh
+  // Scaled point array based on route distance and exaggeration
   const terrainData = useMemo(() => {
     if (points.length < 2) return null;
-
     const maxDist = points[points.length - 1].distanceKm;
-    const minEle = Math.min(...points.map(p => p.smoothedElevationM));
-    const maxEle = Math.max(...points.map(p => p.smoothedElevationM));
+    const minEle = Math.min(...points.map((p) => p.smoothedElevationM));
+    const maxEle = Math.max(...points.map((p) => p.smoothedElevationM));
     const eleRange = maxEle - minEle || 1;
 
-    // Scale: x spans [-5, 5], y (elevation) spans [0, 3], z (depth) [-0.5, 0.5]
-    const scaledPts = points.map(p => ({
+    const yMultiplier = Math.max(0.8, exaggeration * 1.2);
+    const scaledPts = points.map((p) => ({
       x: (p.distanceKm / maxDist) * 10 - 5,
-      y: ((p.smoothedElevationM - minEle) / eleRange) * 3,
+      y: ((p.smoothedElevationM - minEle) / eleRange) * yMultiplier,
       z: 0,
       index: p.index,
       distKm: p.distanceKm,
       ele: p.smoothedElevationM,
+      normEle: (p.smoothedElevationM - minEle) / eleRange,
     }));
 
     return { scaledPts, minEle, maxEle, eleRange, maxDist };
-  }, [points]);
+  }, [points, exaggeration]);
 
-  // Determine segment ranges by point index
-  const isInClimb = useCallback((idx: number) => {
-    if (!climbSegment) return false;
-    return idx >= climbSegment.startIndex && idx <= climbSegment.endIndex;
-  }, [climbSegment]);
+  const isInClimb = useCallback(
+    (idx: number) => {
+      if (!climbSegment) return false;
+      return idx >= climbSegment.startIndex && idx <= climbSegment.endIndex;
+    },
+    [climbSegment]
+  );
 
-  const isInRecovery = useCallback((idx: number) => {
-    if (!recoverySegment) return false;
-    return idx >= recoverySegment.startIndex && idx <= recoverySegment.endIndex;
-  }, [recoverySegment]);
+  const isInRecovery = useCallback(
+    (idx: number) => {
+      if (!recoverySegment) return false;
+      return idx >= recoverySegment.startIndex && idx <= recoverySegment.endIndex;
+    },
+    [recoverySegment]
+  );
 
   useEffect(() => {
     if (!containerRef.current || !terrainData) return;
     const container = containerRef.current;
     const { scaledPts, maxDist } = terrainData;
 
-    // ── Renderer ──
+    const width = container.clientWidth || 600;
+    const height = container.clientHeight || 380;
+
+    // Atmospheric Fog tuned to --color-background (#14120F)
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x14120f, 0.035);
+
+    // 3/4 Isometric-ish initial camera angle
+    const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
+    let cameraAngle = 0.45;
+    let cameraElevation = 0.55;
+    let cameraRadius = 12.0;
+
+    const updateCameraPos = () => {
+      camera.position.x = cameraRadius * Math.sin(cameraAngle) * Math.cos(cameraElevation);
+      camera.position.y = cameraRadius * Math.sin(cameraElevation);
+      camera.position.z = cameraRadius * Math.cos(cameraAngle) * Math.cos(cameraElevation);
+      camera.lookAt(0, 0.5, 0);
+    };
+    updateCameraPos();
+
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.setSize(container.clientWidth, container.clientHeight);
-    renderer.setClearColor(0x111827);
+    renderer.setSize(width, height);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setClearColor(0x14120f, 1);
+    container.innerHTML = '';
     container.appendChild(renderer.domElement);
 
-    // ── Scene ──
-    const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x111827, 0.04);
-
-    // ── Camera ──
-    const camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 100);
-
-    // ── Lights ──
-    const ambient = new THREE.AmbientLight(0xffffff, 0.4);
-    scene.add(ambient);
-    const directional = new THREE.DirectionalLight(0xffffff, 0.8);
-    directional.position.set(5, 10, 5);
-    scene.add(directional);
-
-    // ── Terrain ribbon geometry ──
-    const ribbonWidth = 0.8;
+    // Build the 3D ribbon mesh using 5-stop terrain gradient
+    const ribbonHalfWidth = 0.45;
     const positions: number[] = [];
     const colors: number[] = [];
+
+    for (let i = 0; i < scaledPts.length; i++) {
+      const pt = scaledPts[i];
+      let col = getElevationColor(pt.normEle);
+
+      // Subtle emissive tinting for climb and recovery
+      if (isInClimb(pt.index)) {
+        col = col.clone().lerp(CLIMB_EMISSIVE, 0.65);
+      } else if (isInRecovery(pt.index)) {
+        col = col.clone().lerp(RECOVERY_EMISSIVE, 0.65);
+      }
+
+      // Left vertex
+      positions.push(pt.x, pt.y, -ribbonHalfWidth);
+      colors.push(col.r, col.g, col.b);
+
+      // Right vertex
+      positions.push(pt.x, pt.y, ribbonHalfWidth);
+      colors.push(col.r, col.g, col.b);
+    }
+
     const indices: number[] = [];
-
-    for (let i = 0; i < scaledPts.length; i++) {
-      const p = scaledPts[i];
-      // Front vertex
-      positions.push(p.x, p.y, ribbonWidth / 2);
-      // Back vertex
-      positions.push(p.x, p.y, -ribbonWidth / 2);
-
-      // Color based on segment
-      let color: THREE.Color;
-      if (isInClimb(p.index)) {
-        color = CLIMB_COLOR;
-      } else if (isInRecovery(p.index)) {
-        color = RECOVERY_COLOR;
-      } else {
-        color = BASE_COLOR;
-      }
-      colors.push(color.r, color.g, color.b);
-      colors.push(color.r, color.g, color.b);
-
-      // Triangles
-      if (i < scaledPts.length - 1) {
-        const base = i * 2;
-        indices.push(base, base + 1, base + 2);
-        indices.push(base + 1, base + 3, base + 2);
-      }
+    for (let i = 0; i < scaledPts.length - 1; i++) {
+      const a = i * 2;
+      const b = i * 2 + 1;
+      const c = (i + 1) * 2;
+      const d = (i + 1) * 2 + 1;
+      indices.push(a, b, c);
+      indices.push(b, d, c);
     }
 
-    // Side walls (floor to terrain) for visual depth
-    const wallPositions: number[] = [];
-    const wallColors: number[] = [];
-    const wallIndices: number[] = [];
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+    geometry.setIndex(indices);
+    geometry.computeVertexNormals();
 
-    for (let i = 0; i < scaledPts.length; i++) {
-      const p = scaledPts[i];
-      // Terrain point (front)
-      wallPositions.push(p.x, p.y, ribbonWidth / 2);
-      // Floor point (front)
-      wallPositions.push(p.x, -0.1, ribbonWidth / 2);
+    const material = new THREE.MeshStandardMaterial({
+      vertexColors: true,
+      roughness: 0.75,
+      metalness: 0.15,
+      side: THREE.DoubleSide,
+    });
 
-      let color: THREE.Color;
-      if (isInClimb(p.index)) {
-        color = CLIMB_COLOR.clone().multiplyScalar(0.4);
-      } else if (isInRecovery(p.index)) {
-        color = RECOVERY_COLOR.clone().multiplyScalar(0.4);
-      } else {
-        color = BASE_COLOR.clone().multiplyScalar(0.3);
-      }
-      wallColors.push(color.r, color.g, color.b);
-      wallColors.push(color.r * 0.3, color.g * 0.3, color.b * 0.3);
-
-      if (i < scaledPts.length - 1) {
-        const base = i * 2;
-        wallIndices.push(base, base + 1, base + 2);
-        wallIndices.push(base + 1, base + 3, base + 2);
-      }
-    }
-
-    // Top ribbon mesh
-    const topGeom = new THREE.BufferGeometry();
-    topGeom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-    topGeom.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-    topGeom.setIndex(indices);
-    topGeom.computeVertexNormals();
-    const topMat = new THREE.MeshPhongMaterial({ vertexColors: true, side: THREE.DoubleSide, shininess: 40 });
-    const mesh = new THREE.Mesh(topGeom, topMat);
+    const mesh = new THREE.Mesh(geometry, material);
     scene.add(mesh);
 
-    // Wall mesh
-    const wallGeom = new THREE.BufferGeometry();
-    wallGeom.setAttribute('position', new THREE.Float32BufferAttribute(wallPositions, 3));
-    wallGeom.setAttribute('color', new THREE.Float32BufferAttribute(wallColors, 3));
-    wallGeom.setIndex(wallIndices);
-    wallGeom.computeVertexNormals();
-    const wallMat = new THREE.MeshPhongMaterial({ vertexColors: true, side: THREE.DoubleSide, shininess: 10 });
-    const wallMesh = new THREE.Mesh(wallGeom, wallMat);
-    scene.add(wallMesh);
-
-    // ── Grid floor ──
-    const gridHelper = new THREE.GridHelper(12, 24, 0x1e293b, 0x1e293b);
-    gridHelper.position.y = -0.1;
-    scene.add(gridHelper);
-
-    // ── Hover sphere (cursor beacon) ──
-    const hoverGeo = new THREE.SphereGeometry(0.2, 16, 16);
-    const hoverMat = new THREE.MeshStandardMaterial({
-      color: HOVER_COLOR,
-      emissive: 0x38bdf8,
-      emissiveIntensity: 0.8,
-      roughness: 0.2,
+    // Ground plane with sparse logarithmic contour rings
+    const ringGroup = new THREE.Group();
+    const ringRadii = [2.0, 3.8, 6.0, 8.5];
+    ringRadii.forEach((r) => {
+      const ringGeo = new THREE.RingGeometry(r - 0.02, r, 64);
+      ringGeo.rotateX(-Math.PI / 2);
+      const ringMat = new THREE.MeshBasicMaterial({
+        color: 0x332c22,
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 0.35,
+      });
+      const ring = new THREE.Mesh(ringGeo, ringMat);
+      ring.position.y = -0.5;
+      ringGroup.add(ring);
     });
-    const hoverSphere = new THREE.Mesh(hoverGeo, hoverMat);
+    scene.add(ringGroup);
+
+    // Shared glowing cursor point marker
+    const sphereGeo = new THREE.SphereGeometry(0.18, 16, 16);
+    const sphereMat = new THREE.MeshBasicMaterial({
+      color: HOVER_GLOW,
+      transparent: true,
+      opacity: 0.95,
+    });
+    const hoverSphere = new THREE.Mesh(sphereGeo, sphereMat);
     hoverSphere.visible = false;
     scene.add(hoverSphere);
 
-    // ── Interactive hit targets for smooth cursor tracking in 3D ──
-    const hitMat = new THREE.MeshBasicMaterial({
-      transparent: true,
-      opacity: 0,
-      depthWrite: false,
-      side: THREE.DoubleSide,
-    });
-    // Vertical plane
-    const vPlane = new THREE.Mesh(new THREE.PlaneGeometry(14, 8), hitMat);
-    vPlane.position.set(0, 1.5, 0);
-    scene.add(vPlane);
+    // Lighting: Warm ambient + directional key light
+    const ambientLight = new THREE.AmbientLight(0xf2ede3, 0.85);
+    scene.add(ambientLight);
+    const dirLight = new THREE.DirectionalLight(0xe8dcc8, 1.2);
+    dirLight.position.set(6, 10, 8);
+    scene.add(dirLight);
 
-    // Horizontal plane
-    const hPlane = new THREE.Mesh(new THREE.PlaneGeometry(14, 8), hitMat);
-    hPlane.rotation.x = -Math.PI / 2;
-    hPlane.position.set(0, 1.0, 0);
-    scene.add(hPlane);
-
-    // ── Orbit controls (manual) ──
-    let cameraAngle = Math.PI / 4;
-    let cameraElevation = 0.6;
-    let cameraRadius = 10;
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
     let isDragging = false;
     let lastMouse = { x: 0, y: 0 };
+    let animId = 0;
 
-    const updateCamera = () => {
-      camera.position.x = cameraRadius * Math.cos(cameraAngle) * Math.cos(cameraElevation);
-      camera.position.y = cameraRadius * Math.sin(cameraElevation) + 2;
-      camera.position.z = cameraRadius * Math.sin(cameraAngle) * Math.cos(cameraElevation);
-      camera.lookAt(0, 1, 0);
+    const render = () => {
+      animId = requestAnimationFrame(render);
+      renderer.render(scene, camera);
     };
-    updateCamera();
+    render();
 
-    const onMouseDown = (e: MouseEvent | PointerEvent) => { isDragging = true; lastMouse = { x: e.clientX, y: e.clientY }; };
-    const onMouseUp = () => { isDragging = false; };
-    const onMouseMove = (e: MouseEvent | PointerEvent) => {
+    // Mouse drag orbit controls with damping
+    const onMouseDown = (e: MouseEvent) => {
+      isDragging = true;
+      lastMouse = { x: e.clientX, y: e.clientY };
+    };
+
+    const onMouseUp = () => {
+      isDragging = false;
+    };
+
+    const onMouseMove = (e: MouseEvent) => {
       if (isDragging) {
         const dx = e.clientX - lastMouse.x;
         const dy = e.clientY - lastMouse.y;
-        cameraAngle += dx * 0.005;
-        cameraElevation = Math.max(0.1, Math.min(1.4, cameraElevation + dy * 0.005));
+        cameraAngle -= dx * 0.008;
+        cameraElevation = Math.max(0.1, Math.min(Math.PI / 2 - 0.05, cameraElevation + dy * 0.008));
+        updateCameraPos();
         lastMouse = { x: e.clientX, y: e.clientY };
-        updateCamera();
-      } else {
-        const rect = container.getBoundingClientRect();
-        if (rect.width === 0 || rect.height === 0) return;
-        const mouseX = e.clientX - rect.left;
-        const mouseY = e.clientY - rect.top;
-        if (mouseX < 0 || mouseX > rect.width || mouseY < 0 || mouseY > rect.height) {
-          onHover(null);
-          return;
-        }
+        return;
+      }
 
-        const mouse = new THREE.Vector2(
-          (mouseX / rect.width) * 2 - 1,
-          -(mouseY / rect.height) * 2 + 1
-        );
-        const raycaster = new THREE.Raycaster();
-        raycaster.setFromCamera(mouse, camera);
-        const intersects = raycaster.intersectObjects([mesh, wallMesh, vPlane, hPlane]);
-        if (intersects.length > 0) {
-          const x = THREE.MathUtils.clamp(intersects[0].point.x, -5, 5);
-          let closest = 0;
-          let minDist = Infinity;
-          for (let i = 0; i < scaledPts.length; i++) {
-            const d = Math.abs(scaledPts[i].x - x);
-            if (d < minDist) { minDist = d; closest = i; }
-          }
-          onHover(scaledPts[closest].index);
-        } else {
-          // Direct fallback mapping: cursor X across 3D canvas maps to route distance
-          const progress = THREE.MathUtils.clamp(mouseX / rect.width, 0, 1);
-          const targetDist = progress * maxDist;
-          let closest = 0;
-          let minDist = Infinity;
-          for (let i = 0; i < scaledPts.length; i++) {
-            const d = Math.abs(scaledPts[i].distKm - targetDist);
-            if (d < minDist) { minDist = d; closest = i; }
-          }
-          onHover(scaledPts[closest].index);
+      // Raycasting for bidirectional hover sync
+      const rect = renderer.domElement.getBoundingClientRect();
+      mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObject(mesh);
+
+      if (intersects.length > 0) {
+        const hitX = intersects[0].point.x;
+        const targetDist = ((hitX + 5) / 10) * maxDist;
+
+        // Binary search nearest track point
+        let low = 0;
+        let high = scaledPts.length - 1;
+        while (low <= high) {
+          const mid = Math.floor((low + high) / 2);
+          if (scaledPts[mid].distKm < targetDist) low = mid + 1;
+          else high = mid - 1;
         }
+        const nearestIdx = Math.max(0, Math.min(scaledPts.length - 1, low));
+        onHover(scaledPts[nearestIdx].index);
       }
     };
+
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
-      cameraRadius = Math.max(4, Math.min(20, cameraRadius + e.deltaY * 0.01));
-      updateCamera();
+      cameraRadius = Math.max(4.0, Math.min(22.0, cameraRadius + e.deltaY * 0.01));
+      updateCameraPos();
     };
 
-    container.addEventListener('mousemove', onMouseMove);
-    container.addEventListener('pointermove', onMouseMove);
-    container.addEventListener('mouseleave', () => { isDragging = false; onHover(null); });
-    container.addEventListener('pointerleave', () => { isDragging = false; onHover(null); });
-    renderer.domElement.addEventListener('pointerdown', onMouseDown);
-    renderer.domElement.addEventListener('pointerup', onMouseUp);
-    renderer.domElement.addEventListener('mousedown', onMouseDown);
-    renderer.domElement.addEventListener('mouseup', onMouseUp);
-    renderer.domElement.addEventListener('wheel', onWheel, { passive: false });
-
-    // ── Animation loop ──
-    const animate = () => {
-      const animId = requestAnimationFrame(animate);
-      sceneRef.current = {
-        ...sceneRef.current!,
-        animId,
-        cameraAngle,
-        cameraElevation,
-        cameraRadius,
-      };
-      renderer.render(scene, camera);
-    };
+    const domEl = renderer.domElement;
+    domEl.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('mouseup', onMouseUp);
+    domEl.addEventListener('mousemove', onMouseMove);
+    domEl.addEventListener('wheel', onWheel, { passive: false });
 
     sceneRef.current = {
-      renderer, scene, camera, mesh, hoverSphere,
-      raycaster: new THREE.Raycaster(),
-      mouse: new THREE.Vector2(),
-      isDragging, lastMouse,
-      cameraAngle, cameraElevation, cameraRadius,
-      animId: 0,
+      renderer,
+      scene,
+      camera,
+      mesh,
+      hoverSphere,
+      raycaster,
+      mouse,
+      isDragging,
+      lastMouse,
+      cameraAngle,
+      cameraElevation,
+      cameraRadius,
+      animId,
     };
-
-    animate();
-
-    // Resize handler
-    const onResize = () => {
-      const w = container.clientWidth;
-      const h = container.clientHeight;
-      camera.aspect = w / h;
-      camera.updateProjectionMatrix();
-      renderer.setSize(w, h);
-    };
-    window.addEventListener('resize', onResize);
 
     return () => {
-      window.removeEventListener('resize', onResize);
-      container.removeEventListener('mousemove', onMouseMove);
-      container.removeEventListener('pointermove', onMouseMove);
-      container.removeEventListener('mouseleave', () => { isDragging = false; onHover(null); });
-      container.removeEventListener('pointerleave', () => { isDragging = false; onHover(null); });
-      renderer.domElement.removeEventListener('pointerdown', onMouseDown);
-      renderer.domElement.removeEventListener('pointerup', onMouseUp);
-      renderer.domElement.removeEventListener('mousedown', onMouseDown);
-      renderer.domElement.removeEventListener('mouseup', onMouseUp);
-      renderer.domElement.removeEventListener('wheel', onWheel);
-      if (sceneRef.current) cancelAnimationFrame(sceneRef.current.animId);
+      cancelAnimationFrame(animId);
+      domEl.removeEventListener('mousedown', onMouseDown);
+      window.removeEventListener('mouseup', onMouseUp);
+      domEl.removeEventListener('mousemove', onMouseMove);
+      domEl.removeEventListener('wheel', onWheel);
       renderer.dispose();
-      container.removeChild(renderer.domElement);
+      if (container.contains(domEl)) container.removeChild(domEl);
     };
   }, [terrainData, isInClimb, isInRecovery, onHover]);
 
-  // Update hover sphere position when hoverIndex changes
+  // Synchronize hover point from external 2D chart or internal raycast
   useEffect(() => {
     if (!sceneRef.current || !terrainData) return;
     const { hoverSphere } = sceneRef.current;
@@ -353,16 +347,152 @@ export default function TerrainView({ points, climbSegment, recoverySegment, hov
       return;
     }
 
-    const pt = scaledPts.find(p => p.index === hoverIndex);
+    const pt = scaledPts.find((p) => p.index === hoverIndex);
     if (pt) {
-      hoverSphere.position.set(pt.x, pt.y + 0.15, 0);
+      hoverSphere.position.set(pt.x, pt.y + 0.1, 0);
       hoverSphere.visible = true;
     } else {
       hoverSphere.visible = false;
     }
   }, [hoverIndex, terrainData]);
 
+  // Smooth camera focus on hardest climb section (1200ms ease-in-out cubic)
+  const focusOnHardestSection = () => {
+    if (!sceneRef.current || !terrainData || !climbSegment) return;
+    const { camera } = sceneRef.current;
+    const { scaledPts } = terrainData;
+
+    const climbPts = scaledPts.filter(
+      (p) => p.index >= climbSegment.startIndex && p.index <= climbSegment.endIndex
+    );
+    if (climbPts.length === 0) return;
+
+    const midClimb = climbPts[Math.floor(climbPts.length / 2)];
+    const startPos = camera.position.clone();
+    const targetPos = new THREE.Vector3(midClimb.x, midClimb.y + 2.2, 5.0);
+
+    const startTime = performance.now();
+    const duration = 1200;
+
+    const animateCamera = (now: number) => {
+      const progress = Math.min(1, (now - startTime) / duration);
+      // Cubic ease-in-out
+      const ease =
+        progress < 0.5
+          ? 4 * progress * progress * progress
+          : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+
+      camera.position.lerpVectors(startPos, targetPos, ease);
+      camera.lookAt(midClimb.x, midClimb.y, 0);
+
+      if (progress < 1) requestAnimationFrame(animateCamera);
+    };
+    requestAnimationFrame(animateCamera);
+  };
+
+  if (isLowPower && !forceFullRender) {
+    return (
+      <div
+        className="low-power-notice"
+        style={{
+          padding: 'var(--space-8)',
+          background: 'var(--color-surface)',
+          border: '1px solid var(--color-border)',
+          borderRadius: 'var(--radius-md)',
+          textAlign: 'center',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 'var(--space-4)',
+        }}
+      >
+        <span style={{ fontSize: '2rem' }}>⚡</span>
+        <h3 style={{ fontSize: 'var(--text-h3)', color: 'var(--color-text-primary)' }}>
+          High-Efficiency 2D View Active
+        </h3>
+        <p style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--text-small)', maxWidth: '420px' }}>
+          Your display defaults to the fast 2D elevation chart for optimal battery and rendering speed.
+        </p>
+        <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
+          {onFallbackTo2D && (
+            <button type="button" className="btn-ghost" onClick={onFallbackTo2D}>
+              Keep 2D Profile
+            </button>
+          )}
+          <button type="button" className="btn-primary" onClick={() => setForceFullRender(true)}>
+            Render Full 3D Anyway
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="terrain-container" ref={containerRef} style={{ cursor: 'grab' }} />
+    <div style={{ position: 'relative', width: '100%', height: '380px', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
+      <div ref={containerRef} style={{ width: '100%', height: '100%', cursor: 'grab' }} />
+
+      {/* Floating 3D Control Overlay per Section 14 */}
+      <div
+        style={{
+          position: 'absolute',
+          top: '12px',
+          right: '12px',
+          zIndex: 10,
+          background: 'rgba(28, 25, 20, 0.9)',
+          border: '1px solid var(--color-border)',
+          borderRadius: 'var(--radius-sm)',
+          padding: '8px 12px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '8px',
+          boxShadow: 'var(--shadow-md)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+          <label
+            htmlFor="exaggeration-slider"
+            style={{
+              color: 'var(--color-text-muted)',
+              fontSize: '0.6875rem',
+              textTransform: 'uppercase',
+              letterSpacing: '0.04em',
+              fontFamily: 'var(--font-body)',
+              fontWeight: 600,
+            }}
+          >
+            Terrain emphasis: <span className="mono" style={{ color: 'var(--color-text-primary)' }}>{exaggeration.toFixed(1)}x</span>
+          </label>
+          <input
+            id="exaggeration-slider"
+            type="range"
+            min={1.0}
+            max={5.0}
+            step={0.5}
+            value={exaggeration}
+            onChange={(e) => setExaggeration(Number(e.target.value))}
+            style={{ width: '80px', accentColor: 'var(--color-primary)', cursor: 'pointer' }}
+          />
+        </div>
+
+        {climbSegment && (
+          <button
+            id="focus-steepest-btn"
+            type="button"
+            className="btn-ghost"
+            onClick={focusOnHardestSection}
+            style={{
+              padding: '4px 8px',
+              fontSize: '0.6875rem',
+              width: '100%',
+              justifyContent: 'center',
+            }}
+          >
+            <span>🎯</span> Focus on hardest section
+          </button>
+        )}
+      </div>
+    </div>
   );
-}
+};
+
+export default TerrainView;

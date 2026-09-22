@@ -8,8 +8,8 @@ describe('API Service Layer', () => {
 
   it('fetchDemoRoutes fetches and parses demo routes successfully', async () => {
     const mockRoutes = [
-      { id: 'multi-climb', name: 'Multi-Climb', description: 'Test', distanceKm: 42.0 },
-      { id: 'mountain-climb', name: 'Mountain Climb', description: 'Test 2', distanceKm: 18.0 }
+      { id: 'multi-climb', name: 'Multi-Climb', description: 'Test', distanceKm: 7.67 },
+      { id: 'mountain-climb', name: 'Mountain Climb', description: 'Test 2', distanceKm: 3.93 }
     ]
 
     global.fetch = vi.fn().mockResolvedValue({
@@ -20,7 +20,7 @@ describe('API Service Layer', () => {
     const routes = await fetchDemoRoutes()
     expect(routes).toHaveLength(2)
     expect(routes[0].id).toBe('multi-climb')
-    expect(routes[1].distanceKm).toBe(18.0)
+    expect(routes[1].distanceKm).toBe(3.93)
     expect(fetch).toHaveBeenCalledWith('/api/routes/demo')
   })
 
