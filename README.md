@@ -20,6 +20,9 @@ GradeFinder is an engineering-grade elevation profile analyzer for endurance ath
 ### Alternate Maxima Tie Surfacing & Accessible Text Fallback
 ![Alternate Maxima Card](docs/screenshots/alternate_maxima_card.png)
 
+### What-If Detour Simulator & Spliced Elevation Impact
+![What-If Simulation Impact](docs/screenshots/what_if_simulation_impact_verified.png)
+
 ### Custom Upload Head-to-Head Route Comparison
 ![Route Comparison](docs/screenshots/custom_upload_comparison.png)
 
